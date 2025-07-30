@@ -48,6 +48,11 @@ else
     sudo usermod -aG sudo $USERNAME
 fi
 
+echo "[INFO] パスワードなしでsudoを実行できるように設定します..."
+sudo bash -c "echo "${USERNAME} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-${USERNAME}"
+sudo chmod 440 /etc/sudoers.d/90-${USERNAME}
+echo ""
+
 echo "[INFO] ユーザー $USERNAME の公開鍵を設定します..."
 USER_HOME=$(getent passwd $USERNAME | cut -d: -f6)
 sudo mkdir -p "${USER_HOME}/.ssh"
