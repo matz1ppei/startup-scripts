@@ -5,6 +5,9 @@ set -e
 # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 # 【要編集】ここにあなたの公開鍵を貼り付けてください
 PUBLIC_KEY="ssh-rsa AAAA... user@example.com"
+
+# 【要編集】リモートデスクトップ接続とsudo時に使用するパスワードを設定してください
+PASSWORD="YourStrongPasswordHere"
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 NEW_SSH_PORT=2222
@@ -17,6 +20,10 @@ if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" ]]; then
     echo "エラー: スクリプト内のPUBLIC_KEY変数をあなたの公開鍵に書き換えてください。"
     exit 1
 fi
+if [[ $PASSWORD == "YourStrongPasswordHere" ]]; then
+    echo "エラー: スクリプト内のPASSWORD変数をあなたのパスワードに書き換えてください。"
+    exit 1
+fi
 
 # 1. パッケージ更新
 echo "[INFO] パッケージ更新..."
@@ -25,7 +32,6 @@ echo ""
 
 # 2. デスクトップ環境と関連パッケージのインストール
 echo "[INFO] Xfce, XRDP, Google Chromeをインストール中..."
-# Xfceデスクトップ環境、XRDP、その他ツールをまとめてインストール
 sudo apt install -y xfce4 xfce4-goodies xrdp wget
 echo ""
 
@@ -36,7 +42,7 @@ sudo apt install -y ./google-chrome-stable_current_amd64.deb
 rm ./google-chrome-stable_current_amd64.deb
 echo ""
 
-# 4. ユーザー作成 & 公開鍵設定
+# 4. ユーザー作成 & パスワード設定
 if id "$USERNAME" &>/dev/null; then
     echo "[INFO] ユーザー $USERNAME は既に存在します。"
 else
@@ -45,6 +51,10 @@ else
     sudo usermod -aG sudo $USERNAME
 fi
 
+echo "[INFO] ユーザー $USERNAME にパスワードを設定します..."
+echo "${USERNAME}:${PASSWORD}" | sudo chpasswd
+
+# 公開鍵を設定
 echo "[INFO] ユーザー $USERNAME の公開鍵を設定します..."
 USER_HOME=$(getent passwd $USERNAME | cut -d: -f6)
 sudo mkdir -p "${USER_HOME}/.ssh"
@@ -92,14 +102,15 @@ echo ""
 echo "============================================================"
 echo "【重要】今後の接続情報"
 echo ""
-echo "▼ SSH接続"
+echo "▼ SSH接続 (推奨)"
 echo "  ssh -p ${NEW_SSH_PORT} ${USERNAME}@サーバIP"
 echo ""
 echo "▼ リモートデスクトップ接続"
-echo "  - RDPクライアント（Windowsのリモートデスクトップ接続など）を使用"
+echo "  - RDPクライアント（Windows Appなど）を使用"
 echo "  - コンピューター: サーバIP"
 echo "  - ユーザー名: ${USERNAME}"
+echo "  - パスワード: (スクリプトの冒頭で設定したパスワード)"
 echo ""
 echo "システム全体を最新の状態にするためにサーバーを再起動することをお勧めします。"
 echo "  sudo reboot"
-echo "============================================================"
+echo "============================================================"}
