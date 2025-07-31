@@ -49,7 +49,7 @@ else
 fi
 
 echo "[INFO] パスワードなしでsudoを実行できるように設定します..."
-sudo bash -c "echo "${USERNAME} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-${USERNAME}"
+sudo bash -c "echo \"${USERNAME} ALL=(ALL:ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/90-${USERNAME}\""
 sudo chmod 440 /etc/sudoers.d/90-${USERNAME}
 echo ""
 
