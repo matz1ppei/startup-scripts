@@ -26,20 +26,7 @@ echo ""
 # 2. 基本パッケージのインストール
 # sudo apt install -y \
 
-# 3. Node.js(Volta)のインストール
-echo "[INFO] Voltaをインストール中..."
-curl https://get.volta.sh | bash
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-volta install node
-echo ""
-
-# 4. Gemini Cliのインストール
-echo "[INFO] Gemini Cliをインストール中..."
-volta install @google/gemini-cli
-echo ""
-
-# 5. ユーザー作成 & 公開鍵設定
+# 3. ユーザー作成 & 公開鍵設定
 if id "$USERNAME" &>/dev/null; then
     echo "[INFO] ユーザー $USERNAME は既に存在します。"
 else
@@ -60,6 +47,17 @@ sudo bash -c "echo \"${PUBLIC_KEY}\" > \"${USER_HOME}/.ssh/authorized_keys\""
 sudo chmod 700 "${USER_HOME}/.ssh"
 sudo chmod 600 "${USER_HOME}/.ssh/authorized_keys"
 sudo chown -R ${USERNAME}:${USERNAME} "${USER_HOME}/.ssh"
+echo ""
+
+# 4. Node.js(Volta)のインストール
+echo "[INFO] Voltaをインストール中..."
+sudo -u ${USERNAME} bash -c 'curl https://get.volta.sh | bash'
+echo ""
+
+# 5. Node.jsとGemini Cliのインストール
+echo "[INFO] Node.jsとGemini Cliをインストール中..."
+sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install node"
+sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install @google/gemini-cli"
 echo ""
 
 # 6. UFW設定（SSHポート許可）
