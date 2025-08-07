@@ -10,7 +10,7 @@ PUBLIC_KEY="ssh-rsa AAAA... user@example.com"
 NEW_SSH_PORT=2222
 USERNAME="vpsuser"   # 作業用ユーザー
 
-echo "[INFO] Ubuntu with Gemini Cliのセットアップを開始します..."
+echo "[INFO] Ubuntu with Gemini CLIのセットアップを開始します..."
 
 # 事前チェック
 if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" ]]; then
@@ -19,18 +19,16 @@ if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" ]]; then
 fi
 
 # 1. パッケージ更新
-echo "[INFO] パッケージ更新..."
+echo "[1/6] パッケージ更新..."
 sudo apt update && sudo apt upgrade -y
 echo ""
 
-# 2. 基本パッケージのインストール
-# sudo apt install -y \
-
-# 3. ユーザー作成 & 公開鍵設定
+# 2. ユーザー作成 & 公開鍵設定
+echo "[2/6] 作業用ユーザー ($USERNAME) を準備しています..."
 if id "$USERNAME" &>/dev/null; then
     echo "[INFO] ユーザー $USERNAME は既に存在します。"
 else
-    echo "[INFO] ユーザー $USERNAME を作成します..."
+    echo "[INFO] ユーザー $USERNAME を作成します。"
     sudo adduser --disabled-password --gecos "" $USERNAME
     sudo usermod -aG sudo $USERNAME
 fi
@@ -49,41 +47,41 @@ sudo chmod 600 "${USER_HOME}/.ssh/authorized_keys"
 sudo chown -R ${USERNAME}:${USERNAME} "${USER_HOME}/.ssh"
 echo ""
 
-# 4. Node.js(Volta)のインストール
-echo "[INFO] Voltaをインストール中..."
+# 3. Node.js(Volta)のインストール
+echo "[3/6] Voltaをインストール中..."
 sudo -u ${USERNAME} bash -c 'curl https://get.volta.sh | bash'
 echo ""
 
-# 5. Node.jsとGemini Cliのインストール
-echo "[INFO] Node.jsとGemini Cliをインストール中..."
+# 4. Node.jsとGemini Cliのインストール
+echo "[4/6] Node.jsとGemini Cliをインストール中..."
 sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install node"
 sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install @google/gemini-cli"
 echo ""
 
-# 6. UFW設定（SSHポート許可）
-echo "[INFO] UFWを設定中..."
+# 5. UFW設定（SSHポート許可）
+echo "[5/6] UFWを設定中..."
 sudo ufw allow ${NEW_SSH_PORT}/tcp
 sudo ufw --force enable
 echo ""
 
-# 7. SSH設定変更（ポート + 公開鍵認証）
-echo "[INFO] SSH設定を変更中..."
+# 6. SSH設定変更（ポート + 公開鍵認証）
+echo "[6/6] SSH設定を変更中..."
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.old
-sudo sed -i "s/^Port 22/Port ${NEW_SSH_PORT}/" /etc/ssh/sshd_config
-sudo sed -i "s/^#Port 22/Port ${NEW_SSH_PORT}/" /etc/ssh/sshd_config
-sudo sed -i "s/^PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
-sudo sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
+sudo sed -i "s/^#?Port 22/Port ${NEW_SSH_PORT}/" /etc/ssh/sshd_config
+sudo sed -i "s/^#?PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
 sudo sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
-sudo sed -i "s/^PermitRootLogin yes/PermitRootLogin no/" /etc/ssh/sshd_config
-sudo sed -i "s/^#PermitRootLogin yes/PermitRootLogin no/" /etc/ssh/sshd_config
+sudo sed -i "s/^#?PermitRootLogin yes/PermitRootLogin no/" /etc/ssh/sshd_config
 sudo systemctl restart ssh
 echo ""
 
 
-echo "[INFO] Ubuntu with Gemini Cliのセットアップが完了しました！"
+echo "[INFO] Ubuntu with Gemini CLIのセットアップが完了しました！"
 echo ""
 echo "次回は SSH 接続時にポート ${NEW_SSH_PORT} を使用してください："
 echo "  ssh -p ${NEW_SSH_PORT} ${USERNAME}@サーバIP"
+echo ""
+echo "Geminiを初めて起動する場合にはログインURL取得のために任意のプロンプトを実行してください。"
+echo "  gemini -p 'Hi'"
 echo ""
 echo "また、システム全体を最新の状態にするためにサーバーを再起動することをお勧めします。"
 echo "  sudo reboot"
