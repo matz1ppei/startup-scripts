@@ -189,5 +189,5 @@ echo "  再起動:   sudo systemctl restart minecraft"
 echo ""
 echo "Minecraftサーバーへのコマンド実行はRCONを使用します。"
 echo "RCONはTailscaleネットワーク経由でのみ接続可能です。"
-echo "  例: mcrcon -H <Tailscale IP> -P $RCON_PORT -p \"$RCON_PASSWORD\" list"}
+echo "  例: mcrcon -H <Tailscale IP> -P $RCON_PORT -p \"$RCON_PASSWORD\" list"
 
