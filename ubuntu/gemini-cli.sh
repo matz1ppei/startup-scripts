@@ -53,7 +53,7 @@ sudo -u ${USERNAME} bash -c 'curl https://get.volta.sh | bash'
 echo ""
 
 # 4. Node.jsとGemini Cliのインストール
-echo "[4/6] Node.jsとGemini Cliをインストール中..."
+echo "[4/6] Node.jsとGemini CLIをインストール中..."
 sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install node"
 sudo -u ${USERNAME} bash -c "${USER_HOME}/.volta/bin/volta install @google/gemini-cli"
 echo ""
@@ -67,21 +67,30 @@ echo ""
 # 6. SSH設定変更（ポート + 公開鍵認証）
 echo "[6/6] SSH設定を変更中..."
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.old
-sudo sed -i "s/^#?Port 22/Port ${NEW_SSH_PORT}/" /etc/ssh/sshd_config
-sudo sed -i "s/^#?PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
-sudo sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
-sudo sed -i "s/^#?PermitRootLogin yes/PermitRootLogin no/" /etc/ssh/sshd_config
+sudo sed -i -E "s/^#?Port 22/Port ${NEW_SSH_PORT}/" /etc/ssh/sshd_config
+sudo sed -i -E "s/^#?PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
+sudo sed -i -E "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
+sudo sed -i -E "s/^#?PermitRootLogin yes/PermitRootLogin no/" /etc/ssh/sshd_config
 sudo systemctl restart ssh
 echo ""
 
 
 echo "[INFO] Ubuntu with Gemini CLIのセットアップが完了しました！"
 echo ""
-echo "次回は SSH 接続時にポート ${NEW_SSH_PORT} を使用してください："
+echo "# システムの再起動"
+echo "  sudo reboot"
+echo ""
+echo "# SSHでの接続方法"
 echo "  ssh -p ${NEW_SSH_PORT} ${USERNAME}@サーバIP"
 echo ""
-echo "Geminiを初めて起動する場合にはログインURL取得のために任意のプロンプトを実行してください。"
+echo "# Geminiの使用方法"
+echo " 1. Gemini CLIを起動します（エラーになる想定）"
+echo "  gemini"
+echo ""
+echo " 2. 改めて任意のプロンプトでGemini CLIを起動します"
 echo "  gemini -p 'Hi'"
 echo ""
-echo "また、システム全体を最新の状態にするためにサーバーを再起動することをお勧めします。"
-echo "  sudo reboot"
+echo " 3. 認証用URLが表示されるので、ブラウザで認証します"
+echo ""
+echo " 4. 認証コードが表示されるのでターミナルに入力します"
+echo ""
