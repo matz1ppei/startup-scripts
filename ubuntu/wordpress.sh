@@ -86,14 +86,13 @@ sudo sed -i "s/password_here/${DB_PASSWORD}/" /var/www/html/wordpress/wp-config.
 # Saltキーの自動生成
 SALT=$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)
 # Remove existing define lines for salts and replace them
-START_MARKER=$(grep -n "define( 'AUTH_KEY'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
-END_MARKER=$(grep -n "define( 'NONCE_SALT'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
+START_MARKER=$(grep -n -F "define( 'AUTH_KEY'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
+END_MARKER=$(grep -n -F "define( 'NONCE_SALT'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
 if [ -n "$START_MARKER" ] && [ -n "$END_MARKER" ]; then
     sudo sed -i "${START_MARKER},${END_MARKER}d" /var/www/html/wordpress/wp-config.php
 fi
-sudo bash -c "echo \'${SALT}\' >> /var/www/html/wordpress/wp-config.php"
-sudo bash -c "printf \'%s\\n\' \
-'define(\\'\'FS_METHOD\\'\', \\'\'direct\\'\");\' >> /var/www/html/wordpress/wp-config.php"
+sudo bash -c 'printf "%s\n" "$1" >> /var/www/html/wordpress/wp-config.php' _ "$SALT"
+sudo bash -c 'echo "define(\'FS_METHOD\', \'direct\');" >> /var/www/html/wordpress/wp-config.php'
 
 # パーミッション設定
 sudo chown -R www-data:www-data /var/www/html/wordpress
