@@ -5,12 +5,17 @@ set -e
 # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 # 【要編集】ここにあなたの公開鍵を貼り付けてください
 PUBLIC_KEY="ssh-rsa AAAA... user@example.com"
+
+# 【要編集】ここにあなたのドメイン名を入力してください
+DOMAIN_NAME="example.com"
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # --- WordPress設定 ---
-DB_NAME="wordpress_db"
+WEB_ROOT="/var/www/${DOMAIN_NAME}"
+DB_NAME=$(echo "${DOMAIN_NAME}" | sed 's/[^a-zA-Z0-9]//g')
 DB_USER="wp_user"
 DB_PASSWORD=$(openssl rand -base64 12) # ランダムなパスワードを生成
+
 # --- SSH設定 ---
 NEW_SSH_PORT=2222
 USERNAME="vpsuser"   # 作業用ユーザー
@@ -18,8 +23,8 @@ USERNAME="vpsuser"   # 作業用ユーザー
 echo "[INFO] Ubuntu with WordPress (Nginx + MariaDB) のセットアップを開始します..."
 
 # 事前チェック
-if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" ]]; then
-    echo "エラー: スクリプト内のPUBLIC_KEY変数をあなたの公開鍵に書き換えてください。"
+if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" || $DOMAIN_NAME == "example.com" ]]; then
+    echo "エラー: スクリプト内のPUBLIC_KEYとDOMAIN_NAME変数をあなたの環境に合わせて書き換えてください。"
     exit 1
 fi
 
@@ -75,39 +80,40 @@ echo "[6/9] WordPressをインストール中..."
 cd /tmp
 curl -O https://wordpress.org/latest.tar.gz
 tar xzvf latest.tar.gz
-sudo mv wordpress /var/www/html/
+sudo mv wordpress "${WEB_ROOT}"
 
 # wp-config.php の設定
-sudo mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php
-sudo sed -i "s/database_name_here/${DB_NAME}/" /var/www/html/wordpress/wp-config.php
-sudo sed -i "s/username_here/${DB_USER}/" /var/www/html/wordpress/wp-config.php
-sudo sed -i "s/password_here/${DB_PASSWORD}/" /var/www/html/wordpress/wp-config.php
+CONFIG_PATH="${WEB_ROOT}/wp-config.php"
+sudo mv "${WEB_ROOT}/wp-config-sample.php" "${CONFIG_PATH}"
+sudo sed -i "s/database_name_here/${DB_NAME}/" "${CONFIG_PATH}"
+sudo sed -i "s/username_here/${DB_USER}/" "${CONFIG_PATH}"
+sudo sed -i "s/password_here/${DB_PASSWORD}/" "${CONFIG_PATH}"
 
 # Saltキーの自動生成
 SALT=$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)
 # Remove existing define lines for salts and replace them
-START_MARKER=$(grep -n -F "define('AUTH_KEY'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
-END_MARKER=$(grep -n -F "define('NONCE_SALT'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
+START_MARKER=$(grep -n -F "define('AUTH_KEY'" "${CONFIG_PATH}" | cut -d: -f1)
+END_MARKER=$(grep -n -F "define('NONCE_SALT'" "${CONFIG_PATH}" | cut -d: -f1)
 if [ -n "$START_MARKER" ] && [ -n "$END_MARKER" ]; then
-    sudo sed -i "${START_MARKER},${END_MARKER}d" /var/www/html/wordpress/wp-config.php
+    sudo sed -i "${START_MARKER},${END_MARKER}d" "${CONFIG_PATH}"
 fi
-sudo bash -c 'printf "%s\n" "$1" >> /var/www/html/wordpress/wp-config.php' _ "$SALT"
-sudo bash -c 'echo "define(\'FS_METHOD\', \'direct\');" >> /var/www/html/wordpress/wp-config.php'
+sudo bash -c 'printf "%s\n" "$1" >> "'"${CONFIG_PATH}"'"' _ "$SALT"
+sudo bash -c 'echo "define('FS_METHOD', 'direct');" >> "'"${CONFIG_PATH}"'"'
 
 # パーミッション設定
-sudo chown -R www-data:www-data /var/www/html/wordpress
-sudo find /var/www/html/wordpress/ -type d -exec chmod 755 {} \;
-sudo find /var/www/html/wordpress/ -type f -exec chmod 644 {} \;
+sudo chown -R www-data:www-data "${WEB_ROOT}"
+sudo find "${WEB_ROOT}/" -type d -exec chmod 755 {} \;
+sudo find "${WEB_ROOT}/" -type f -exec chmod 644 {} \;
 echo ""
 
 # 7. Nginxの設定
 echo "[7/9] Nginxを設定中..."
 PHP_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
-sudo bash -c "cat > /etc/nginx/sites-available/wordpress" <<EOF
+sudo bash -c "cat > /etc/nginx/sites-available/${DOMAIN_NAME}" <<EOF
 server {
     listen 80;
-    server_name _;
-    root /var/www/html/wordpress;
+    server_name ${DOMAIN_NAME};
+    root ${WEB_ROOT};
 
     index index.php index.html index.htm;
 
@@ -115,7 +121,8 @@ server {
         try_files $uri $uri/ /index.php?$args;
     }
 
-    location ~ \.php\$ {
+    location ~ \.php\$
+ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php/php${PHP_VERSION}-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -128,7 +135,7 @@ server {
 }
 EOF
 
-sudo ln -sf /etc/nginx/sites-available/wordpress /etc/nginx/sites-enabled/
+sudo ln -sf "/etc/nginx/sites-available/${DOMAIN_NAME}" /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo systemctl restart nginx
 echo ""
@@ -165,9 +172,9 @@ echo "# 次のステップ"
 echo " 1. サーバーを再起動してください。"
 echo "    sudo reboot"
 echo ""
-echo " 2. ブラウザでサーバーのIPアドレスにアクセスし、WordPressの初期設定を完了させてください。"
-echo "    http://サーバーIP/"
+echo " 2. ブラウザでドメインにアクセスし、WordPressの初期設定を完了させてください。"
+echo "    http://${DOMAIN_NAME}/"
 echo ""
 echo "# SSHでの接続方法"
-echo "  ssh -p ${NEW_SSH_PORT} ${USERNAME}@サーバーIP"
+echo "  ssh -p ${NEW_SSH_PORT} ${USERNAME}@${DOMAIN_NAME}"
 echo ""
