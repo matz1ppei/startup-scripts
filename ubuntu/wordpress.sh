@@ -23,8 +23,8 @@ USERNAME="vpsuser"   # 作業用ユーザー
 echo "[INFO] Ubuntu with WordPress (Nginx + MariaDB) のセットアップを開始します..."
 
 # 事前チェック
-if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" || $DOMAIN_NAME == "example.com" ]]; then
-    echo "エラー: スクリプト内のPUBLIC_KEYとDOMAIN_NAME変数をあなたの環境に合わせて書き換えてください。"
+if [[ $PUBLIC_KEY == "ssh-rsa AAAA... user@example.com" ]]; then
+    echo "エラー: スクリプト内のPUBLIC_KEY変数をあなたの環境に合わせて書き換えてください。"
     exit 1
 fi
 
