@@ -64,8 +64,8 @@ echo ""
 
 # 5. WordPress用データベースとユーザーの作成
 echo "[5/9] WordPress用データベースを作成中..."
-sudo mysql -e "CREATE DATABASE ${DB_NAME} DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
-sudo mysql -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME} DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
+sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
 sudo mysql -e "FLUSH PRIVILEGES;"
 echo ""
@@ -86,8 +86,8 @@ sudo sed -i "s/password_here/${DB_PASSWORD}/" /var/www/html/wordpress/wp-config.
 # Saltキーの自動生成
 SALT=$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)
 # Remove existing define lines for salts and replace them
-START_MARKER=$(grep -n -F "define( 'AUTH_KEY'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
-END_MARKER=$(grep -n -F "define( 'NONCE_SALT'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
+START_MARKER=$(grep -n -F "define('AUTH_KEY'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
+END_MARKER=$(grep -n -F "define('NONCE_SALT'" /var/www/html/wordpress/wp-config.php | cut -d: -f1)
 if [ -n "$START_MARKER" ] && [ -n "$END_MARKER" ]; then
     sudo sed -i "${START_MARKER},${END_MARKER}d" /var/www/html/wordpress/wp-config.php
 fi
