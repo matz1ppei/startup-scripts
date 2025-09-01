@@ -92,13 +92,15 @@ sudo sed -i "s/password_here/${DB_PASSWORD}/" "${CONFIG_PATH}"
 # Saltキーの自動生成
 SALT=$(curl -sL https://api.wordpress.org/secret-key/1.1/salt/)
 # Remove existing define lines for salts and replace them
-START_MARKER=$(grep -n -F "define('AUTH_KEY'" "${CONFIG_PATH}" | cut -d: -f1)
-END_MARKER=$(grep -n -F "define('NONCE_SALT'" "${CONFIG_PATH}" | cut -d: -f1)
+START_MARKER=$(grep -n -F "define( 'AUTH_KEY'" "${CONFIG_PATH}" | cut -d: -f1)
+END_MARKER=$(grep -n -F "define( 'NONCE_SALT'" "${CONFIG_PATH}" | cut -d: -f1)
 if [ -n "$START_MARKER" ] && [ -n "$END_MARKER" ]; then
     sudo sed -i "${START_MARKER},${END_MARKER}d" "${CONFIG_PATH}"
 fi
 sudo bash -c 'printf "%s\n" "$1" >> "'"${CONFIG_PATH}"'"' _ "$SALT"
-sudo bash -c 'echo "define('FS_METHOD', 'direct');" >> "'"${CONFIG_PATH}"'"'
+sudo tee -a "${CONFIG_PATH}" >/dev/null <<'EOF'
+define('FS_METHOD', 'direct');
+EOF
 
 # パーミッション設定
 sudo chown -R www-data:www-data "${WEB_ROOT}"
