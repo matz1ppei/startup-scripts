@@ -25,54 +25,92 @@ If you don't have an SSH key pair, you can generate one on your local machine (n
 
 ## Scripts
 
-### `gemini-cli.sh`
-
-This script sets up a new Ubuntu server with the Gemini CLI. It also performs basic security hardening, including:
-
-*   Creating a new user (`vpsuser`) for daily operations.
+All scripts perform basic security hardening, including:
+*   Creating a new user for daily operations.
 *   Setting up SSH public key authentication for the new user.
 *   Changing the default SSH port to `2222`.
 *   Disabling password authentication and root login via SSH.
-*   Configuring the UFW firewall to allow the new SSH port.
+*   Configuring the UFW firewall.
+
+### `gemini-cli.sh`
+
+This script sets up a new Ubuntu server with the Gemini CLI.
 
 #### Prerequisites
 
-Before running the script, you **MUST** edit `gemini-cli.sh` and replace the placeholder public key with your own (see how to generate and find it in the section above).
-
-1.  Open `gemini-cli.sh` with a text editor.
-2.  Find the line `PUBLIC_KEY="ssh-rsa AAAA... user@example.com"`.
-3.  Replace the entire string with your actual SSH public key.
+- Your SSH public key.
 
 #### Usage
 
-1.  **Copy the script to your server:**
-    ```bash
-    # Replace YOUR_SERVER_IP with your server's IP address
-    scp ./gemini-cli.sh root@YOUR_SERVER_IP:/root/
-    ```
-
-2.  **Connect to your server and run the script:**
-    ```bash
-    ssh root@YOUR_SERVER_IP
-
-    # Grant execute permission
-    chmod +x /root/gemini-cli.sh
-
-    # Run the script
-    /root/gemini-cli.sh
-    ```
+1.  Edit the `PUBLIC_KEY` variable in the script.
+2.  Copy the script to your server (e.g., with `scp`).
+3.  Connect to your server as `root`, make the script executable (`chmod +x`), and run it.
 
 #### After Execution
 
-Once the script is complete:
+- Log in as the new user (`vpsuser`) on the new SSH port (`2222`).
+- It is recommended to reboot the server.
 
-*   Your SSH session might be disconnected.
-*   You must use the new port and username to log in next time.
-    ```bash
-    # Replace YOUR_SERVER_IP with your server's IP address
-    ssh -p 2222 vpsuser@YOUR_SERVER_IP
-    ```
-*   It is recommended to reboot the server to apply all changes.
-    ```bash
-    sudo reboot
-    ```
+### `desktop.sh`
+
+This script sets up an Ubuntu server with an XFCE desktop environment and Google Chrome, accessible via any RDP client.
+
+#### Prerequisites
+
+- Your SSH public key.
+- A strong password for the new user (for RDP and `sudo`).
+
+#### Usage
+
+1.  Edit the `PUBLIC_KEY` and `PASSWORD` variables in the script.
+2.  Copy the script to your server.
+3.  Connect as `root`, make the script executable, and run it.
+
+#### After Execution
+
+- You can connect via SSH as `vpsuser` on port `2222`.
+- You can connect via an RDP client to the server's IP address on port `3389` using the username `vpsuser` and the password you set.
+
+### `minecraft.sh`
+
+This script sets up a Minecraft Java Edition server that automatically runs the latest version. It uses Tailscale for secure access, meaning you don't need to open the Minecraft port to the public internet.
+
+#### Prerequisites
+
+- Your SSH public key.
+- A Tailscale account.
+
+#### Usage
+
+1.  Edit the `PUBLIC_KEY` variable in the script. You can also adjust server settings like memory and MOTD.
+2.  Copy the script to your server.
+3.  Connect as `root`, make the script executable, and run it.
+
+#### After Execution
+
+1.  Log in via SSH as the new user (`mcuser`) on port `2222`.
+2.  Run `sudo tailscale up` and authenticate in your browser.
+3.  Find your server's Tailscale IP with `tailscale ip -4`.
+4.  Connect to this IP address in your Minecraft client.
+5.  The server runs as a `systemd` service and will start automatically on boot.
+
+### `wordpress.sh`
+
+This script sets up a WordPress site with an Nginx and MariaDB stack.
+
+#### Prerequisites
+
+- Your SSH public key.
+- A domain name to host the WordPress site.
+
+#### Usage
+
+1.  Edit the `PUBLIC_KEY` and `DOMAIN_NAME` variables in the script.
+2.  Copy the script to your server.
+3.  Connect as `root`, make the script executable, and run it.
+
+#### After Execution
+
+- Log in via SSH as the new user (`vpsuser`) on port `2222`.
+- Access your domain name in a web browser to complete the WordPress installation.
+- The script will output the randomly generated database password, which you should store securely.
