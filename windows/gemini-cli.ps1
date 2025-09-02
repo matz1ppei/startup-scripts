@@ -23,6 +23,9 @@
 # Example: "ssh-rsa AAAA... user@example.com"
 $PUBLIC_KEY = ""
 
+# Define the port for the SSH server.
+$SSH_PORT = 22
+
 #================================================================================
 # --- SCRIPT BODY --- (DO NOT EDIT BELOW THIS LINE)
 #================================================================================
@@ -48,6 +51,10 @@ function Install-OpenSSHServer {
 }
 
 function Configure-SSHD {
+    param (
+        [int]$Port
+    )
+
     Write-Host "Configuring OpenSSH server..."
     
     # Set service to start automatically and ensure it's running
@@ -68,6 +75,7 @@ function Configure-SSHD {
 
     Write-Host "Applying security settings to sshd_config..."
     (Get-Content $sshdConfigFile) | 
+        ForEach-Object { $_ -replace '(?i)^#?Port.*$', "Port $Port" } |
         ForEach-Object { $_ -replace '(?i)^#?PasswordAuthentication.*$', 'PasswordAuthentication no' } | 
         ForEach-Object { $_ -replace '(?i)^#?PubkeyAuthentication.*$', 'PubkeyAuthentication yes' } |
         Set-Content $sshdConfigFile -Force
@@ -107,13 +115,16 @@ function Setup-SSHKeys {
 }
 
 function Configure-Firewall {
+    param (
+        [int]$Port
+    )
     Write-Host "Configuring Windows Firewall..."
-    $ruleName = "OpenSSH-Server-In-TCP"
+    $ruleName = "OpenSSH-Server-In-TCP-Port-$Port"
     if (-not (Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue)) {
-        Write-Host "Adding firewall rule for SSH (port 22)..."
-        New-NetFirewallRule -Name $ruleName -DisplayName 'OpenSSH Server (sshd)' -Protocol TCP -LocalPort 22 -Action Allow -Direction Inbound -ErrorAction Stop
+        Write-Host "Adding firewall rule for SSH (port $Port)..."
+        New-NetFirewallRule -Name $ruleName -DisplayName "OpenSSH Server (sshd) on Port $Port" -Protocol TCP -LocalPort $Port -Action Allow -Direction Inbound -ErrorAction Stop
     } else {
-        Write-Host "Firewall rule for SSH already exists."
+        Write-Host "Firewall rule for SSH on port $Port already exists."
     }
 }
 
@@ -156,12 +167,12 @@ Test-Admin
 Write-Host "Starting Windows setup for Gemini CLI and OpenSSH..." -ForegroundColor Green
 
 Install-OpenSSHServer
-Configure-SSHD
+Configure-SSHD -Port $SSH_PORT
 Setup-SSHKeys -UserPublicKey $PUBLIC_KEY
-Configure-Firewall
+Configure-Firewall -Port $SSH_PORT
 Install-GeminiTools
 
 Write-Host "`nSetup Complete!" -ForegroundColor Green
 Write-Host "-------------------"
-Write-Host "To connect to this machine, use: ssh $($env:USERNAME)@$($env:COMPUTERNAME)"
+Write-Host "To connect to this machine, use: ssh -p $SSH_PORT $($env:USERNAME)@$($env:COMPUTERNAME)"
 Write-Host "To use the Gemini CLI, please restart your terminal and then run 'gemini'."
