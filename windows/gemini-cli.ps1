@@ -2,17 +2,17 @@
 
 <#
 .SYNOPSIS
-    Sets up a Windows environment with Gemini CLI and an OpenSSH server.
+    Sets up a Windows environment with a secure OpenSSH server.
 .DESCRIPTION
     This script performs the following actions:
     1. Installs and configures an OpenSSH server for secure remote access.
     2. Disables password authentication, allowing only public key authentication.
-    3. Configures the Windows Firewall to allow SSH connections.
-    4. Installs Volta (via winget) to manage Node.js versions.
-    5. Installs Node.js and the Google Gemini CLI (via Volta).
+    3. Configures the Windows Firewall to allow SSH connections on the specified port.
 .NOTES
     Author: Gemini
-    Prerequisites: Windows PowerShell 5.1 or later, winget package manager.
+    Prerequisites: Windows PowerShell 5.1 or later.
+    実行ポリシーのエラーが発生する場合は、次のコマンドを使用してこのスクリプトを実行できます:
+    powershell -ExecutionPolicy Bypass -File .\gemini-cli.ps1
 #>
 
 #================================================================================
@@ -95,23 +95,18 @@ function Setup-SSHKeys {
         exit 1
     }
 
-    Write-Host "Setting up SSH authorized_keys..."
-    $sshDir = "$env:USERPROFILE\.ssh"
+    Write-Host "Setting up SSH authorized_keys for Administrator..."
+    $sshDir = "$env:ProgramData\ssh"
     if (-not (Test-Path $sshDir)) {
         New-Item -Path $sshDir -ItemType Directory -Force | Out-Null
     }
 
-    $authKeysFile = "$sshDir\authorized_keys"
+    $authKeysFile = "$sshDir\administrators_authorized_keys"
     $UserPublicKey | Out-File -FilePath $authKeysFile -Encoding ascii -Force
 
-    # Set permissions for the key file
-    # This is a complex but necessary step for OpenSSH on Windows
-    try {
-        # Disable inheritance and remove all existing permissions
-        icacls.exe $authKeysFile /inheritance:r /grant:r "$($env:USERNAME):R" "SYSTEM:R"
-    } catch {
-        Write-Warning "Failed to set permissions on authorized_keys. SSH might not work correctly. $_"
-    }
+    # The default permissions for the administrators_authorized_keys file are sufficient
+    # when the file is created by an administrator. The previous explicit icacls command
+    # was for user-specific files and is not needed here.
 }
 
 function Configure-Firewall {
@@ -128,51 +123,17 @@ function Configure-Firewall {
     }
 }
 
-function Install-WingetPackage {
-    param (
-        [string]$PackageName,
-        [string]$PackageId
-    )
-
-    Write-Host "Checking if $PackageName is installed..."
-    if (-not (winget list --id $PackageId -n 1 --accept-source-agreements)) {
-        Write-Host "Installing $PackageName via winget..."
-        winget install $PackageId -e --accept-source-agreements --ErrorAction Stop
-    } else {
-        Write-Host "$PackageName is already installed."
-    }
-}
-
-function Install-GeminiTools {
-    Install-WingetPackage -PackageName "Volta" -PackageId "Volta.Volta"
-
-    # Define Volta path and ensure it's available for the script
-    $voltaExe = "$env:LOCALAPPDATA\Volta\volta.exe"
-    if (-not (Test-Path $voltaExe)) {
-        Write-Error "Volta installation failed or it was not found at the expected path."
-        exit 1
-    }
-
-    Write-Host "Installing Node.js (LTS) via Volta..."
-    & $voltaExe install node
-
-    Write-Host "Installing Google Gemini CLI via Volta..."
-    & $voltaExe install @google/gemini-cli
-}
-
 # --- Main Execution ---
 
 Test-Admin
 
-Write-Host "Starting Windows setup for Gemini CLI and OpenSSH..." -ForegroundColor Green
+Write-Host "Starting Windows setup for OpenSSH..." -ForegroundColor Green
 
 Install-OpenSSHServer
 Configure-SSHD -Port $SSH_PORT
 Setup-SSHKeys -UserPublicKey $PUBLIC_KEY
 Configure-Firewall -Port $SSH_PORT
-Install-GeminiTools
 
 Write-Host "`nSetup Complete!" -ForegroundColor Green
 Write-Host "-------------------"
 Write-Host "To connect to this machine, use: ssh -p $SSH_PORT $($env:USERNAME)@$($env:COMPUTERNAME)"
-Write-Host "To use the Gemini CLI, please restart your terminal and then run 'gemini'."
