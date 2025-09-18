@@ -8,7 +8,8 @@ The goal of these scripts is to automate the initial setup and configuration of 
 
 ### Available Scripts
 
-*   **[Ubuntu](./ubuntu/README.md)**: Scripts for setting up Ubuntu servers.
+- **[Ubuntu](./ubuntu/README.md)**: Scripts for setting up Ubuntu servers.
+- **[Windows](./windows/README.md)**: A comprehensive script for setting up a Windows development environment, including an SSH server, PowerShell 7, Oh My Posh, Volta, and Node.js.
 
 ## Usage
 
