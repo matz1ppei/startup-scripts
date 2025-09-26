@@ -114,3 +114,17 @@ This script sets up a WordPress site with an Nginx and MariaDB stack.
 - Log in via SSH as the new user (`vpsuser`) on port `2222`.
 - Access your domain name in a web browser to complete the WordPress installation.
 - The script will output the randomly generated database password, which you should store securely.
+
+### `minecraft-bedrock.sh`
+
+Sets up a comprehensive Ubuntu server environment for hosting a Minecraft Bedrock Edition server.
+
+**Features:**
+- Creates a dedicated user (`mcserver`)
+- Hardens SSH (disables password auth, changes port)
+- Installs and configures Tailscale for secure access
+- Installs the latest Bedrock server and runs it as a `systemd` service
+- Manages the server console via `tmux`
+
+**Important Limitation (Development Paused):**
+This script's security model relies on **Tailscale**. It does not expose the Minecraft game port (19132/udp) to the public internet. This is not compatible with game clients that cannot install Tailscale, such as the **Nintendo Switch**. Development is paused pending a decision on an alternative security model.
