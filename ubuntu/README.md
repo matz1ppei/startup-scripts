@@ -128,3 +128,9 @@ Sets up a comprehensive Ubuntu server environment for hosting a Minecraft Bedroc
 
 **Important Limitation (Development Paused):**
 This script's security model relies on **Tailscale**. It does not expose the Minecraft game port (19132/udp) to the public internet. This is not compatible with game clients that cannot install Tailscale, such as the **Nintendo Switch**. Development is paused pending a decision on an alternative security model.
+
+### `softether.sh` (Development Frozen)
+
+**Goal:** To create a script that automates the setup of a SoftEther VPN server.
+
+**Current Status:** Development is currently frozen. The script is **non-functional** and fails during the `vpncmd` configuration step. The last known issue is an error where `hamcore.se2` is reported as missing, likely due to an incorrect working directory when calling `vpncmd`.
