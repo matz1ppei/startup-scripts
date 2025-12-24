@@ -115,6 +115,27 @@ This script sets up a WordPress site with an Nginx and MariaDB stack.
 - Access your domain name in a web browser to complete the WordPress installation.
 - The script will output the randomly generated database password, which you should store securely.
 
+### `strongswan-ikev2.sh`
+
+This script sets up a modern and secure IKEv2 VPN server using strongSwan. It uses username/password authentication (EAP-MSCHAPv2) and is compatible with the built-in VPN clients on iOS, macOS, Windows, and more.
+
+#### Prerequisites
+
+- Your SSH public key.
+
+#### Usage
+
+1.  Edit the `PUBLIC_KEY` variable in the script. You can also set a `VPN_USER` and `VPN_PASSWORD` if you don't want them to be randomly generated.
+2.  Copy the script to your server.
+3.  Connect as `root`, make the script executable, and run it.
+
+#### After Execution
+
+- The script will output the server IP, VPN username, and password.
+- **Crucially**, it will also display a **CA Certificate**. You must save this certificate text as a file (e.g., `ca.cer`) and install it on every device you wish to connect to the VPN. This is a one-time setup step per device.
+- For iOS/iPadOS, you must also manually enable trust for the installed CA certificate under `Settings > General > About > Certificate Trust Settings`.
+- Log in via SSH as the new user (`vpsuser`) on port `2222`.
+
 ### `minecraft-bedrock.sh`
 
 Sets up a comprehensive Ubuntu server environment for hosting a Minecraft Bedrock Edition server.
@@ -133,4 +154,6 @@ This script's security model relies on **Tailscale**. It does not expose the Min
 
 **Goal:** To create a script that automates the setup of a SoftEther VPN server.
 
-**Current Status:** Development is currently frozen. The script is **non-functional** and fails during the `vpncmd` configuration step. The last known issue is an error where `hamcore.se2` is reported as missing, likely due to an incorrect working directory when calling `vpncmd`.
+**Current Status:** Development is currently frozen. The script is **non-functional**.
+
+**Recommendation:** Please use the `strongswan-ikev2.sh` script instead for a modern, secure, and working VPN server solution.
